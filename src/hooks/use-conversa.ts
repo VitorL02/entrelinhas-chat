@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Client, type StompSubscription } from '@stomp/stompjs';
 import { descreverFalha, normalizarEndpoint, validarMensagem, type AvisoConexao, type MensagemChat } from '@/lib/contratos-chat';
 
+import SockJS from 'sockjs-client/dist/sockjs';
+
+
 const SEGUNDOS_PARA_DESISTIR = 12;
 
 export function usarConversa() {
@@ -71,43 +74,43 @@ export function usarConversa() {
     void abrirTransporte(endpoint, tentativa);
   }
 
-  async function abrirTransporte(endpoint: string, tentativa: number) {
-    const transporte = await import('sockjs-client').catch(function aoFalharAoCarregar() { return null; });
-    if (tentativa !== geracao.current) { limparVigia(); return; }
-    if (!transporte) {
-      definirEstado('desconectado');
-      definirAviso(descreverFalha('transporte'));
-      return;
-    }
-    const conexao = new Client({
-      webSocketFactory: function criarTransporte() { return new transporte.default(endpoint); },
-      reconnectDelay: 0,
-      onConnect: function aoConectar() {
-        limparVigia();
-        chegouAConectar.current = true;
-        definirEstado('conectado');
-        definirAviso(null);
-        inscreverSala(salaAtual.current);
-      },
-      onStompError: function aoSerRecusado(quadro) {
-        limparVigia();
-        if (tentativa !== geracao.current) return;
-        definirAviso(descreverFalha('recusa', quadro.headers['message']));
-        void desconectarWebSocket();
-      },
-      onWebSocketClose: function aoEncerrar() {
-        limparVigia();
-        if (tentativa !== geracao.current || encerrandoDeProposito.current) return;
-        definirEstado('desconectado');
-        inscricao.current = null;
-        if (desistiuPorTempo.current) return;
-        definirAviso(chegouAConectar.current ? descreverFalha('queda') : descreverFalha('rede'));
-      },
-    });
-    cliente.current = conexao;
-    conexao.activate();
+ function abrirTransporte(endpoint: string, tentativa: number) {
+  if (tentativa !== geracao.current) {
+    limparVigia();
+    return;
   }
 
+  const conexao = new Client({
+    webSocketFactory: function criarTransporte() {
+      return new SockJS(endpoint);
+    },
+    reconnectDelay: 0,
+    onConnect: function aoConectar() {
+      limparVigia();
+      chegouAConectar.current = true;
+      definirEstado('conectado');
+      definirAviso(null);
+      inscreverSala(salaAtual.current);
+    },
+    onStompError: function aoSerRecusado(quadro) {
+      limparVigia();
+      if (tentativa !== geracao.current) return;
+      definirAviso(descreverFalha('recusa', quadro.headers['message']));
+      void desconectarWebSocket();
+    },
+    onWebSocketClose: function aoEncerrar() {
+      limparVigia();
+      if (tentativa !== geracao.current || encerrandoDeProposito.current) return;
+      definirEstado('desconectado');
+      inscricao.current = null;
+      if (desistiuPorTempo.current) return;
+      definirAviso(chegouAConectar.current ? descreverFalha('queda') : descreverFalha('rede'));
+    },
+  });
+
+  cliente.current = conexao;
+  conexao.activate();
+}
   async function desconectarWebSocket() {
     geracao.current += 1;
     limparVigia();
