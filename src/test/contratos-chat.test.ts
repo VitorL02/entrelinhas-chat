@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizarEndpoint, validarMensagem, formatarDataHora } from '@/lib/contratos-chat';
+import { descreverFalha, normalizarEndpoint, validarMensagem, formatarDataHora, type TipoFalha } from '@/lib/contratos-chat';
 
 describe('Contratos do chat', function testarContratos() {
   it('normaliza a URL base sem duplicar ws', function testarEndereco() {
@@ -15,5 +15,12 @@ describe('Contratos do chat', function testarContratos() {
   });
   it('preserva timestamps não interpretáveis', function testarHorario() {
     expect(formatarDataHora('17:42')).toBe('17:42');
+  });
+  it('diferencia cada motivo de falha com título e orientação próprios', function testarFalhas() {
+    const motivos: TipoFalha[] = ['nome', 'endereco', 'transporte', 'rede', 'tempo', 'queda', 'recusa', 'mensagem', 'envio'];
+    const titulos = new Set(motivos.map(function mapearTitulo(tipo) { return descreverFalha(tipo).titulo; }));
+    expect(titulos.size).toBe(motivos.length);
+    expect(descreverFalha('recusa', 'Sala inexistente').detalhe).toBe('Sala inexistente');
+    expect(descreverFalha('rede').detalhe).toContain('CORS');
   });
 });

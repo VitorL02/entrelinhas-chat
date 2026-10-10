@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
-import { ArrowDown, ArrowRight, Check, Hash, Menu, Moon, Plus, Radio, Settings2, Sun, X } from 'lucide-react';
+import { AlertCircle, ArrowDown, ArrowRight, Check, Hash, Menu, Moon, Plus, Radio, Settings2, Sun, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usarConversa } from '@/hooks/use-conversa';
-import { formatarDataHora } from '@/lib/contratos-chat';
+import { formatarDataHora, type AvisoConexao } from '@/lib/contratos-chat';
 import fotografia from '@/assets/editorial-water.jpg';
 
 export const Route = createFileRoute('/')({
@@ -23,7 +23,7 @@ export const Route = createFileRoute('/')({
 function PaginaConversa() {
   const conversa = usarConversa();
   const [usuario, definirUsuario] = useState('');
-  const [endereco, definirEndereco] = useState('http://localhost:8080/ws');
+  const [endereco, definirEndereco] = useState('https://chatrealtime-entrelinhas.vercel.app/ws');
   const [conteudo, definirConteudo] = useState('');
   const [escuro, definirEscuro] = useState(false);
   const [configuracao, definirConfiguracao] = useState(false);
@@ -35,6 +35,7 @@ function PaginaConversa() {
   const campoMensagem = useRef<HTMLTextAreaElement>(null);
   const mensagens = conversa.historico[conversa.sala] || [];
   const conectado = conversa.estado === 'conectado';
+  const avisoNaIdentidade = conversa.aviso?.tipo === 'nome' || conversa.aviso?.tipo === 'endereco';
   const quantidade = Object.values(conversa.historico).reduce(function contarMensagens(total, lista) { return total + lista.length; }, 0);
 
   useEffect(function rolarConversa() {
@@ -86,7 +87,8 @@ function PaginaConversa() {
             <div className="titulo-secao"><span>SUA IDENTIDADE</span><span>02 —</span></div>
             <label htmlFor="nome">Como podemos chamar você?</label>
             <input id="nome" value={usuario} disabled={conversa.estado !== 'desconectado'} onChange={function editarUsuario(evento) { definirUsuario(evento.target.value); }} placeholder="Seu nome" maxLength={50} autoComplete="nickname" />
-            <Button className="botao-conectar" onClick={acionarConexao} disabled={!usuario.trim() && conversa.estado === 'desconectado'}>{conversa.estado === 'conectado' ? 'Desconectar' : conversa.estado === 'conectando' ? 'Cancelar conexão' : 'Entrar na conversa'}{conversa.estado === 'conectado' ? <Check /> : <ArrowRight />}</Button>
+            <Button className="botao-conectar" onClick={acionarConexao}>{conversa.estado === 'conectado' ? 'Desconectar' : conversa.estado === 'conectando' ? 'Cancelar conexão' : 'Entrar na conversa'}{conversa.estado === 'conectado' ? <Check /> : <ArrowRight />}</Button>
+            {conversa.aviso && avisoNaIdentidade && <AvisoFalha aviso={conversa.aviso} aoDispensar={conversa.descartarAviso} />}
             <Button variant="ghost" className="botao-configuracao" onClick={function abrirConfiguracao() { definirConfiguracao(true); }}><Settings2 />Configurar conexão</Button>
           </div>
           <figure className="fotografia"><img src={fotografia} alt="Ramo sobre a água, em preto e branco" width={1024} height={512} /><figcaption>CONEXÕES QUE FLUEM.</figcaption></figure>
@@ -103,7 +105,7 @@ function PaginaConversa() {
             <div ref={final} />
           </div>
           <div className="area-compositor">
-            {conversa.erro && <p className="erro-conexao" role="alert">{conversa.erro}</p>}
+            {conversa.aviso && !avisoNaIdentidade && <AvisoFalha aviso={conversa.aviso} aoDispensar={conversa.descartarAviso} />}
             <form className="compositor" onSubmit={enviarMensagem}>
               <textarea ref={campoMensagem} aria-label="Sua mensagem" value={conteudo} onChange={function editarMensagem(evento) { definirConteudo(evento.target.value); }} onKeyDown={tratarTecla} placeholder={conectado ? `Sua mensagem para #${conversa.sala}…` : 'Sua próxima conversa começa com um olá…'} maxLength={10000} rows={2} disabled={!conectado} />
               <div className="rodape-compositor"><span><i />{conectado ? `Conversando como ${usuario}` : 'Conecte-se para enviar mensagens'}</span><Button type="submit" disabled={!conectado || !conteudo.trim()} className="botao-enviar">Enviar <ArrowRight /></Button></div>
@@ -114,6 +116,16 @@ function PaginaConversa() {
       </main>
       <footer className="rodape"><span>entrelinhas<span className="ponto-marca">.</span><span className="rodape-descricao"> FEITO PARA CONECTAR PESSOAS.</span></span><span>{quantidade} {quantidade === 1 ? 'mensagem' : 'mensagens'} nesta sessão <span className="separador-rodape">/</span> Em tempo real</span></footer>
       {configuracao && <div className="fundo-modal" onClick={function fecharFundo(evento) { if (evento.target === evento.currentTarget) definirConfiguracao(false); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="titulo-conexao"><div className="titulo-modal"><h2 id="titulo-conexao">Sua conexão.</h2><Button variant="ghost" size="icon" aria-label="Fechar configuração" onClick={function fecharConfiguracao() { definirConfiguracao(false); }}><X /></Button></div><label htmlFor="endereco">Endereço do servidor</label><input id="endereco" autoFocus type="url" value={endereco} disabled={conversa.estado !== 'desconectado'} onChange={function editarEndereco(evento) { definirEndereco(evento.target.value); }} /><p className="detalhe-conexao">Spring Boot · STOMP / SockJS</p><div className="destinos"><span>ENVIO</span><code>/app/chat.send/{conversa.sala}</code><span>RECEBIMENTO</span><code>/topic/chat/{conversa.sala}</code></div><Button className="w-full" onClick={function salvarConfiguracao() { definirConfiguracao(false); }}>Concluir <Check /></Button></section></div>}
+    </div>
+  );
+}
+
+function AvisoFalha({ aviso, aoDispensar }: { aviso: AvisoConexao; aoDispensar: () => void }) {
+  return (
+    <div className={`aviso-falha aviso-${aviso.tipo}`} role="alert">
+      <AlertCircle className="icone-falha" />
+      <div className="texto-falha"><strong>{aviso.titulo}</strong><span>{aviso.detalhe}</span></div>
+      <Button variant="ghost" size="icon" className="dispensar-falha" title="Dispensar aviso" aria-label="Dispensar aviso" onClick={aoDispensar}><X /></Button>
     </div>
   );
 }
