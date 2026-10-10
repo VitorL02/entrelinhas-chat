@@ -13,3 +13,4 @@
 - Hold room histories in React session state without persistent storage; each subscription captures its room so messages remain isolated when switching channels.
 - Define the editorial light/dark semantic palette on the chat root and share typography through root head links; this keeps every chat surface and dialog theme-consistent.
 - Map the SockJS global identifier to globalThis in Vite; its browser dependency otherwise throws before connecting.
+- Classify every connection failure into a typed cause declared in the chat contracts module and surface it as one dismissible alert; an intentional disconnect must never raise one — this keeps reasons distinguishable and free of false alarms.
