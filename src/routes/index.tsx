@@ -23,7 +23,7 @@ export const Route = createFileRoute('/')({
 function PaginaConversa() {
   const conversa = usarConversa();
   const [usuario, definirUsuario] = useState('');
-  const [endereco, definirEndereco] = useState('http://localhost:8080/ws');
+  const [endereco, definirEndereco] = useState('https://chatrealtime-entrelinhas.vercel.app/ws');
   const [conteudo, definirConteudo] = useState('');
   const [escuro, definirEscuro] = useState(false);
   const [configuracao, definirConfiguracao] = useState(false);
