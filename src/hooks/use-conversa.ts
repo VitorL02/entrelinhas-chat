@@ -44,7 +44,7 @@ export function usarConversa() {
         reconnectDelay: 0,
         connectionTimeout: 12000,
         onConnect: function aoConectar() { definirEstado('conectado'); definirErro(''); inscreverSala(salaAtual.current); },
-        onStompError: function aoReceberErro(quadro) { definirErro(quadro.headers.message || 'O servidor recusou a conexão.'); void desconectarWebSocket(); },
+        onStompError: function aoReceberErro(quadro) { definirErro(quadro.headers['message'] || 'O servidor recusou a conexão.'); void desconectarWebSocket(); },
         onWebSocketClose: function aoFechar() {
           if (tentativa !== geracao.current) return;
           definirEstado('desconectado');

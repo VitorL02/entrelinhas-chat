@@ -16,7 +16,7 @@ export function normalizarEndpoint(endereco: string) {
 export function validarMensagem(valor: unknown): valor is MensagemChat {
   if (!valor || typeof valor !== 'object') return false;
   const mensagem = valor as Record<string, unknown>;
-  return typeof mensagem.from === 'string' && typeof mensagem.content === 'string' && typeof mensagem.timeStamp === 'string';
+  return typeof mensagem['from'] === 'string' && typeof mensagem['content'] === 'string' && typeof mensagem['timeStamp'] === 'string';
 }
 
 export function formatarDataHora(valor: string) {

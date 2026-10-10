@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
-import { ArrowDown, ArrowRight, Check, ChevronDown, Hash, Menu, Moon, Plus, Radio, Settings2, Sun, X } from 'lucide-react';
+import { ArrowDown, ArrowRight, Check, Hash, Menu, Moon, Plus, Radio, Settings2, Sun, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usarConversa } from '@/hooks/use-conversa';
 import { formatarDataHora } from '@/lib/contratos-chat';
