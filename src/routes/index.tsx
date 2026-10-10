@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
-import { ArrowDown, ArrowRight, Check, Hash, Menu, Moon, Plus, Radio, Settings2, Sun, X } from 'lucide-react';
+import { AlertCircle, ArrowDown, ArrowRight, Check, Hash, Menu, Moon, Plus, Radio, Settings2, Sun, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usarConversa } from '@/hooks/use-conversa';
-import { formatarDataHora } from '@/lib/contratos-chat';
+import { formatarDataHora, type AvisoConexao } from '@/lib/contratos-chat';
 import fotografia from '@/assets/editorial-water.jpg';
 
 export const Route = createFileRoute('/')({
@@ -35,6 +35,7 @@ function PaginaConversa() {
   const campoMensagem = useRef<HTMLTextAreaElement>(null);
   const mensagens = conversa.historico[conversa.sala] || [];
   const conectado = conversa.estado === 'conectado';
+  const avisoNaIdentidade = conversa.aviso?.tipo === 'nome' || conversa.aviso?.tipo === 'endereco';
   const quantidade = Object.values(conversa.historico).reduce(function contarMensagens(total, lista) { return total + lista.length; }, 0);
 
   useEffect(function rolarConversa() {
@@ -86,7 +87,8 @@ function PaginaConversa() {
             <div className="titulo-secao"><span>SUA IDENTIDADE</span><span>02 —</span></div>
             <label htmlFor="nome">Como podemos chamar você?</label>
             <input id="nome" value={usuario} disabled={conversa.estado !== 'desconectado'} onChange={function editarUsuario(evento) { definirUsuario(evento.target.value); }} placeholder="Seu nome" maxLength={50} autoComplete="nickname" />
-            <Button className="botao-conectar" onClick={acionarConexao} disabled={!usuario.trim() && conversa.estado === 'desconectado'}>{conversa.estado === 'conectado' ? 'Desconectar' : conversa.estado === 'conectando' ? 'Cancelar conexão' : 'Entrar na conversa'}{conversa.estado === 'conectado' ? <Check /> : <ArrowRight />}</Button>
+            <Button className="botao-conectar" onClick={acionarConexao}>{conversa.estado === 'conectado' ? 'Desconectar' : conversa.estado === 'conectando' ? 'Cancelar conexão' : 'Entrar na conversa'}{conversa.estado === 'conectado' ? <Check /> : <ArrowRight />}</Button>
+            {conversa.aviso && avisoNaIdentidade && <AvisoFalha aviso={conversa.aviso} aoDispensar={conversa.descartarAviso} />}
             <Button variant="ghost" className="botao-configuracao" onClick={function abrirConfiguracao() { definirConfiguracao(true); }}><Settings2 />Configurar conexão</Button>
           </div>
           <figure className="fotografia"><img src={fotografia} alt="Ramo sobre a água, em preto e branco" width={1024} height={512} /><figcaption>CONEXÕES QUE FLUEM.</figcaption></figure>
@@ -103,7 +105,7 @@ function PaginaConversa() {
             <div ref={final} />
           </div>
           <div className="area-compositor">
-            {conversa.erro && <p className="erro-conexao" role="alert">{conversa.erro}</p>}
+            {conversa.aviso && !avisoNaIdentidade && <AvisoFalha aviso={conversa.aviso} aoDispensar={conversa.descartarAviso} />}
             <form className="compositor" onSubmit={enviarMensagem}>
               <textarea ref={campoMensagem} aria-label="Sua mensagem" value={conteudo} onChange={function editarMensagem(evento) { definirConteudo(evento.target.value); }} onKeyDown={tratarTecla} placeholder={conectado ? `Sua mensagem para #${conversa.sala}…` : 'Sua próxima conversa começa com um olá…'} maxLength={10000} rows={2} disabled={!conectado} />
               <div className="rodape-compositor"><span><i />{conectado ? `Conversando como ${usuario}` : 'Conecte-se para enviar mensagens'}</span><Button type="submit" disabled={!conectado || !conteudo.trim()} className="botao-enviar">Enviar <ArrowRight /></Button></div>
