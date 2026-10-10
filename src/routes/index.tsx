@@ -119,3 +119,13 @@ function PaginaConversa() {
     </div>
   );
 }
+
+function AvisoFalha({ aviso, aoDispensar }: { aviso: AvisoConexao; aoDispensar: () => void }) {
+  return (
+    <div className={`aviso-falha aviso-${aviso.tipo}`} role="alert">
+      <AlertCircle className="icone-falha" />
+      <div className="texto-falha"><strong>{aviso.titulo}</strong><span>{aviso.detalhe}</span></div>
+      <Button variant="ghost" size="icon" className="dispensar-falha" title="Dispensar aviso" aria-label="Dispensar aviso" onClick={aoDispensar}><X /></Button>
+    </div>
+  );
+}
